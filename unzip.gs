@@ -255,3 +255,16 @@ function getUniqueFolderName(parentFolder, baseName) {
   }
   return name;
 }
+
+// Process the incoming request from external service/script
+function doPost(e) {
+  var params = JSON.parse(e.postData.contents);
+  var fileId = params.fileId;
+  var destinationFolderId = params.destinationFolderId;
+  var newFolderName = params.newFolderName;
+  
+  var result = extractZipAndCreateFolders(fileId, destinationFolderId, newFolderName);
+  
+  return ContentService.createTextOutput(result)
+    .setMimeType(ContentService.MimeType.JSON);
+}
