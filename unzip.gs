@@ -352,8 +352,8 @@ function handleRequest(e) {
  */
 /* 
 function testExtractZipAndCreateFolders() {
-  var fileId = '12ZNcA6NtvJSw17KIzl3g0D0PWLRVjnqb';
-  var destinationFolderId = '1Vu5a2VtPpQ1QUFOKS2uj5PuaQ-xxMJ2I';
+  var fileId = 'Example_File_ID';
+  var destinationFolderId = 'Example_Dest_Folder_ID';
   var newFolderName = '[] New Folder'; // Optional: set to null to use zip file name
   var result = extractZipAndCreateFolders(fileId, destinationFolderId, newFolderName);
   Logger.log(result);
