@@ -1,3 +1,8 @@
+// Configuration
+const CONFIG = {
+  API_KEY: 'YOUR_SECRET_API_KEY' // Replace with your actual API key
+};
+
 /**
  * Extracts a zip file and creates a folder structure in Google Drive
  * @param {string} fileId - The ID of the zip file in Google Drive
@@ -298,8 +303,7 @@ function handleRequest(e) {
     var params = e.postData ? JSON.parse(e.postData.contents) : e.parameter;
     
     // API Key Authentication
-    // Add your API key here
-    if (params.apiKey !== 'YOUR_SECRET_API_KEY') { 
+    if (params.apiKey !== CONFIG.API_KEY) {
       throw new Error('Unauthorized');
     }
     
