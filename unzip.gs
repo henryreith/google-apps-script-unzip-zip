@@ -256,15 +256,101 @@ function getUniqueFolderName(parentFolder, baseName) {
   return name;
 }
 
-// Process the incoming request from external service/script
-function doPost(e) {
-  var params = JSON.parse(e.postData.contents);
-  var fileId = params.fileId;
-  var destinationFolderId = params.destinationFolderId;
-  var newFolderName = params.newFolderName;
-  
-  var result = extractZipAndCreateFolders(fileId, destinationFolderId, newFolderName);
-  
-  return ContentService.createTextOutput(result)
-    .setMimeType(ContentService.MimeType.JSON);
+/* -- Security -- */
+// Helper Functions
+
+function checkRateLimit() {
+  var cache = CacheService.getScriptCache();
+  var key = 'lastExecution_' + Session.getActiveUser().getEmail();
+  var lastExecution = cache.get(key);
+  var now = new Date().getTime();
+  if (lastExecution && now - parseInt(lastExecution) < 1000) { // 1 second limit
+    throw new Error('Rate limit exceeded');
+  }
+  cache.put(key, now.toString(), 60); // Store for 60 seconds
 }
+
+function validateInput(fileId, destinationFolderId) {
+  if (!/^[a-zA-Z0-9-_]+$$/.test(fileId) || !/^[a-zA-Z0-9-_]+$$/.test(destinationFolderId)) {
+    throw new Error('Invalid input format');
+  }
+}
+
+function verifyFileAccess(fileId) {
+  try {
+    DriveApp.getFileById(fileId);
+  } catch (e) {
+    throw new Error('No access to file or file does not exist: ' + fileId);
+  }
+}
+
+function doPost(e) {
+  return handleRequest(e);
+}
+/* I don't use GET but if you do, uncomment this.
+function doGet(e) {
+  return handleRequest(e);
+} */
+
+function handleRequest(e) {
+  try {
+    // Parse the incoming JSON data
+    var params = e.postData ? JSON.parse(e.postData.contents) : e.parameter;
+    
+    // API Key Authentication
+    // Add your API key here
+    if (params.apiKey !== 'YOUR_SECRET_API_KEY') { 
+      throw new Error('Unauthorized');
+    }
+    
+    // Rate Limiting
+    checkRateLimit();
+    
+    // Input Validation
+    var fileId = params.fileId;
+    var destinationFolderId = params.destinationFolderId;
+    var newFolderName = params.newFolderName;
+    
+    if (!fileId || !destinationFolderId) {
+      throw new Error('Missing required parameters');
+    }
+    
+    validateInput(fileId, destinationFolderId);
+    
+    // File Access Verification
+    verifyFileAccess(fileId);
+    verifyFileAccess(destinationFolderId);
+
+    console.log('Execution started for user: ' + Session.getActiveUser().getEmail());
+    
+    // Main Function Execution
+    var result = extractZipAndCreateFolders(fileId, destinationFolderId, newFolderName);
+    
+    // Return Result
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      data: JSON.parse(result)
+    })).setMimeType(ContentService.MimeType.JSON);
+
+    console.log('Operation completed successfully');
+    
+  } catch (error) {
+    // Return Error
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: error.message
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Test function to run the main function with specific IDs
+ */
+/* 
+function testExtractZipAndCreateFolders() {
+  var fileId = '12ZNcA6NtvJSw17KIzl3g0D0PWLRVjnqb';
+  var destinationFolderId = '1Vu5a2VtPpQ1QUFOKS2uj5PuaQ-xxMJ2I';
+  var newFolderName = '[] New Folder'; // Optional: set to null to use zip file name
+  var result = extractZipAndCreateFolders(fileId, destinationFolderId, newFolderName);
+  Logger.log(result);
+} */
